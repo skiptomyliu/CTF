@@ -2,6 +2,7 @@
 DNSvault:     file format elf64-x86-64
 
 
+# /lib64/ld-linux-x86-64.so.2.
 Disassembly of section .interp:
 
 0000000000400238 <.interp>:
@@ -16,8 +17,6 @@ Disassembly of section .interp:
   400250:	6f                   	outsl  %ds:(%rsi),(%dx)
   400251:	2e 32 00             	xor    %cs:(%rax),%al
 
-
-# /lib64/ld-linux-x86-64.so.2.
 
 
 
@@ -137,7 +136,18 @@ Disassembly of section .dynsym:
   4003ad:	00 00                	add    %al,(%rax)
 	...
 
-Disassembly of section .dynstr:
+
+
+#.libc.so.6.puts.
+#__stack_chk_fail
+#.putchar.stdin.p
+#rintf.fgets.memc
+#mp.__libc_start_
+#main.__gmon_star
+#t__.GLIBC_2.4.GL
+#IBC_2.2.5.:
+
+Contents of section .dynstr:
 
 00000000004003b0 <.dynstr>:
   4003b0:	00 6c 69 62          	add    %ch,0x62(%rcx,%rbp,2)
@@ -346,6 +356,8 @@ Disassembly of section .init:
   400575:	48 83 c4 08          	add    $0x8,%rsp
   400579:	c3                   	retq   
 
+
+# Function calls
 Disassembly of section .plt:
 
 0000000000400580 <putchar@plt-0x10>:
@@ -481,6 +493,12 @@ Disassembly of section .text:
   4006f8:	e9 73 ff ff ff       	jmpq   400670 <register_tm_clones>
 
 
+
+
+"""
+int main()
+"""
+
 """
 Assembly is simpler than C. In GAS assembly, instructions are suffixed with the letters "b", "s", "w", "l", "q" or "t" to determine what size operand is being manipulated.
 
@@ -502,7 +520,7 @@ Assembly is simpler than C. In GAS assembly, instructions are suffixed with the 
   400712:	48 89 45 e8          	mov    %rax,-0x18(%rbp) 
   400716:	31 c0                	xor    %eax,%eax          # clear eax register
 
-# Is this just all string stuff prior to calling puts?  
+# Suspicion that the password compare is being done here
 
   400718:	c6 85 50 ff ff ff 11 	movb   $0x11,-0xb0(%rbp)        176
   40071f:	c6 85 51 ff ff ff 36 	movb   $0x36,-0xaf(%rbp)    6   175
@@ -590,11 +608,11 @@ Assembly is simpler than C. In GAS assembly, instructions are suffixed with the 
   4008eb:	ff 
   4008ec:	31 c2                	xor    %eax,%edx
   4008ee:	8b 85 4c ff ff ff    	mov    -0xb4(%rbp),%eax
-  4008f4:	48 98                	cltq                                # convert long to quad (8 bytes)
+  4008f4:	48 98                	cltq                              # convert long to quad (8 bytes)
   4008f6:	88 54 05 d0          	mov    %dl,-0x30(%rbp,%rax,1)
   4008fa:	83 85 4c ff ff ff 01 	addl   $0x1,-0xb4(%rbp)
   400901:	83 bd 4c ff ff ff 13 	cmpl   $0x13,-0xb4(%rbp)
-  400908:	7e a7                	jle    4008b1 <main+0x1b4>          # jump back
+  400908:	7e a7                	jle    4008b1 <main+0x1b4>        # jump back for more string stuff.  Seems like for loop
   40090a:	c6 45 c3 00          	movb   $0x0,-0x3d(%rbp)
   40090e:	48 8d 8d 50 ff ff ff 	lea    -0xb0(%rbp),%rcx
   400915:	48 8d 45 b0          	lea    -0x50(%rbp),%rax
@@ -697,6 +715,14 @@ Disassembly of section .rodata:
 # All the text to be displayed .rodata
 #
 
+
+
+# _____                                    _  __      __         _ _
+#|  __ \                                  | | \ \    / /        | | |
+#| |__) |_ _ ___ _____      _____  _ __ __| |  \ \  / /_ _ _   _| | |_
+#|  ___/ _` / __/ __\ \ /\ / / _ \| '__/ _` |   \ \/ / _` | | | | | __|
+#| |  | (_| \__ \__ \\ V  V / (_) | | | (_| |    \  / (_| | |_| | | |_
+#|_|   \__,_|___/___/ \_/\_/ \___/|_|  \__,_|     \/ \__,_|\__,_|_|\__|
 
 0000000000400a30 <_IO_stdin_used>:
   400a30:	01 00                	add    %eax,(%rax)            # This is the section with all the text
