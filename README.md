@@ -68,7 +68,7 @@ kali:~/re# file DNSvault
 DNSvault: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.24, BuildID[sha1]=4fa2a0be6e3d44846833aa7723ca38e31a6b0baa, not stripped
 </pre>
 
-Obtaining clues from strings.  I have truncated the output to items that were interesting:
+Obtaining clues from strings.  I have truncated the output to items that were interesting.  C methods that relate to output (puts, printf), input (stdin, fgets), and likely the comparison method used to test the password entered (memcmp)
 <pre>
 kali:~/re# strings DNSvault
 /lib64/ld-linux-x86-64.so.2
@@ -103,7 +103,7 @@ stdin@@GLIBC_2.2.5
 printf@@GLIBC_2.2.5
 </pre>
 
-Diving into the actual grit.  Dump the disassembled source:
+Diving into the actual grit.  Dump the disassembled source using objdump:
 
 <pre>
 root@kali:~/re# objdump -D DNSvault
@@ -114,7 +114,9 @@ This is where most of the work was performed.  I have annotated the dump with my
 Explanations annotations of key areas.  I have bolded the important addresses:
 
 <pre>
-<b>4008a0:	e8 4b fd ff ff       	callq  4005f0 <fgets@plt>         	  # request input from stdin</b>
+...<i>truncated</i>...
+
+<b>4008a0:	e8 4b fd ff ff       	callq  4005f0 <fgets@plt>         # request input from stdin</b>
   4008a5:	c7 85 4c ff ff ff 00 	movl   $0x0,-0xb4(%rbp)           
   4008ac:	00 00 00 
   4008af:	eb 50                	jmp    400901 <main+0x204>        # jumping to a compare...
@@ -145,8 +147,8 @@ Explanations annotations of key areas.  I have bolded the important addresses:
   400915:	48 8d 45 b0          	lea    -0x50(%rbp),%rax
   400919:	ba 14 00 00 00       	mov    $0x14,%edx
   40091e:	48 89 ce             	mov    %rcx,%rsi
-  400921:	48 89 c7             	mov    %rax,%rdi                      # after entering password: 
-  
+  400921:	48 89 c7             	mov    %rax,%rdi                    # after entering password: 
+
   <b>
   #Check if the password is correct.  If it not, jump to printing the error message.
   400924:	e8 b7 fc ff ff       	callq  4005e0 <memcmp@plt>
@@ -168,19 +170,19 @@ Explanations annotations of key areas.  I have bolded the important addresses:
   40095c:	bf b1 0c 40 00       	mov    $0x400cb1,%edi                 # Calls the please enter your password address
   400961:	b8 00 00 00 00       	mov    $0x0,%eax
   400966:	e8 55 fc ff ff       	callq  4005c0 <printf@plt>            # Prints the flag
-  40096b:	bf 58 0c 40 00       	mov    $0x400c58,%edi                 # Prints the entry +------+
+  40096b:	bf 58 0c 40 00       	mov    $0x400c58,%edi                 # Prints +------+
   400970:	e8 2b fc ff ff       	callq  4005a0 <puts@plt>
   400975:	b8 00 00 00 00       	mov    $0x0,%eax
   40097a:	eb 0f                	jmp    40098b <main+0x28e>
   40097c:	bf ca 0c 40 00       	mov    $0x400cca,%edi                 # jump to here from not equal compare
-  400981:	e8 1a fc ff ff       	callq  4005a0 <puts@plt>              # print incorrect password 
+  400981:	e8 1a fc ff ff       	callq  4005a0 <puts@plt>              # print incorrect password message
   400986:	b8 01 00 00 00       	mov    $0x1,%eax
+
+  ...<i>truncated</i>...
 </pre>
 
 
-
-Set a breakpoint before the jump not equal (jne) @ 0x40092b so that the error message is not printed.
-
+Load up the executable in gdb.  Set a breakpoint before the jump not equal (jne) @ 0x40092b so that the error message is not printed.
 <pre>
 (gdb) break *0x40092b
 Breakpoint 1 at 0x40092b
@@ -222,6 +224,39 @@ Continuing.
 | the flag       | kseR+#2 |
 +----------------+---------------------+
 </pre>
+
+Alternatively, we can modify the zflag which is set by 'test eax, eax' on line:  
+
+<pre>
+400924:	e8 b7 fc ff ff       	callq  4005e0 <memcmp@plt>
+400929:	85 c0                	test   %eax,%eax                      
+40092b:	75 4f                	jne    40097c <main+0x27f>     
+</pre>
+
+jne will jump to the error message if it is not equal to 0.  Setting the zflag will prevent the jump:
+
+<pre>
+(gdb) set $ps=$ps|0x40
+(gdb) p/t $eflags
+$5 = 1001000110
+(gdb) c
+Continuing.
+
+1 Entry:
++----------------+---------------------+
+| Username       | Password            |
++----------------+---------------------+
+| the flag       | kse<!#2 |
++----------------+---------------------+
+
+</pre>
+
+
+Additional notes:
+
+I have not been able to figure out the password to the code, but I suspect that code from addresses 0x4008b1 to 0x400908 is where the comparison takes place.  If we use gdb to dump the memory register $rbp-0xb4, within the memory blocks we can see the password we have inputed for comparison.  Values in 0x400718 to 0x40081c seem to also allude to a potential password character set (67:,'6b6*'b .#,'6c X+#2 EY? N'2), although could be completely off base.
+
+
 
 
 ### Level 3 Never Roll Your Own Crypto
