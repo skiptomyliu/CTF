@@ -57,16 +57,6 @@ https://level0x1.eff-ctf.org/tweets?uid=1 UNION SELECT null, body FROM messages-
 
 ### Level 2 Reverse Engineering for Fun and No Profit
 
-http://stackoverflow.com/questions/23295724/how-does-linux-execute-a-file
-http://reverseengineering.stackexchange.com/questions/3815/reversing-elf-64-bit-lsb-executable-x86-64-gdb
-http://manoharvanga.com/hackme/
-https://en.wikipedia.org/wiki/X86_assembly_language
-https://www.recurse.com/blog/7-understanding-c-by-learning-assembly
-http://stackoverflow.com/questions/2420813/using-gdb-to-single-step-assembly-code-outside-specified-executable-causes-error
-http://stackoverflow.com/questions/5429137/how-to-print-register-values-in-gdb
-https://en.wikipedia.org/wiki/X86_instruction_listings
-http://stackoverflow.com/questions/3887162/how-to-access-data-that-an-offset-of-a-register-in-gdb
-
 I have not yet figured out what the password is, however I have been able to circumvent the need for an actual password to obtain the flag.
 
 Tools used:  readelf, strings, objdump, gdb
