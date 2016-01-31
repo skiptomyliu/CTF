@@ -109,9 +109,9 @@ Diving into the actual grit.  Dump the disassembled source using objdump:
 root@kali:~/re# objdump -D DNSvault
 </pre>
 
-This is where most of the work was performed.  I have annotated the dump with my notes in DNSvault.asm  
+This is where most of the work was performed.  I have annotated the dump with my notes in [DNSvault.asm](./DNSvault.asm)  
 
-Explanations annotations of key areas.  I have bolded the important addresses:
+Here's a snippet of the key areas.  I have further bolded the important instructions.
 
 <pre>
 ...<i>truncated</i>...
@@ -233,7 +233,7 @@ Alternatively, we can modify the zflag which is set by 'test eax, eax' on line:
 40092b:	75 4f                	jne    40097c <main+0x27f>     
 </pre>
 
-jne will jump to the error message if it is not equal to 0.  Setting the zflag will prevent the jump:
+jne will jump to the error message if the zflag it is not equal to 0.  The zflag is set by test %eax, %eax.  Setting the zflag will prevent the jump:
 
 <pre>
 (gdb) set $ps=$ps|0x40
