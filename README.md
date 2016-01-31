@@ -57,6 +57,180 @@ https://level0x1.eff-ctf.org/tweets?uid=1 UNION SELECT null, body FROM messages-
 
 ### Level 2 Reverse Engineering for Fun and No Profit
 
+http://stackoverflow.com/questions/23295724/how-does-linux-execute-a-file
+http://reverseengineering.stackexchange.com/questions/3815/reversing-elf-64-bit-lsb-executable-x86-64-gdb
+http://manoharvanga.com/hackme/
+https://en.wikipedia.org/wiki/X86_assembly_language
+https://www.recurse.com/blog/7-understanding-c-by-learning-assembly
+http://stackoverflow.com/questions/2420813/using-gdb-to-single-step-assembly-code-outside-specified-executable-causes-error
+http://stackoverflow.com/questions/5429137/how-to-print-register-values-in-gdb
+https://en.wikipedia.org/wiki/X86_instruction_listings
+http://stackoverflow.com/questions/3887162/how-to-access-data-that-an-offset-of-a-register-in-gdb
+
+I have not yet figured out what the password is, however I have been able to circumvent the need for an actual password to obtain the flag.
+
+Tools used:  readelf, strings, objdump, gdb
+
+Obtaining file type:
+
+kali:~/re# file DNSvault
+DNSvault: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.24, BuildID[sha1]=4fa2a0be6e3d44846833aa7723ca38e31a6b0baa, not stripped
+
+
+Obtaining clues from strings.  I have truncated the output to items that were interesting:
+kali:~/re# strings DNSvault
+/lib64/ld-linux-x86-64.so.2
+
+puts
+__stack_chk_fail
+putchar
+stdin
+printf
+fgets
+memcmp
+ _____                                    _  __      __         _ _
+|  __ \                                  | | \ \    / /        | | |
+| |__) |_ _ ___ _____      _____  _ __ __| |  \ \  / /_ _ _   _| | |_
+|  ___/ _` / __/ __\ \ /\ / / _ \| '__/ _` |   \ \/ / _` | | | | | __|
+| |  | (_| \__ \__ \\ V  V / (_) | | | (_| |    \  / (_| | |_| | | |_
+|_|   \__,_|___/___/ \_/\_/ \___/|_|  \__,_|     \/ \__,_|\__,_|_|\__|
+A project of the Department of National Security
+Authorized use only!
+Please enter your password:
+1 Entry:
++----------------+---------------------+
+| Username       | Password            |
+| the flag       | %s |
+ERROR: Incorrect Password
+;*3$"
+GCC: (Ubuntu 4.8.4-2ubuntu1~14.04) 4.8.4
+GCC: (Ubuntu 4.8.2-19ubuntu1) 4.8.2
+putchar@@GLIBC_2.2.5
+puts@@GLIBC_2.2.5
+stdin@@GLIBC_2.2.5
+printf@@GLIBC_2.2.5
+
+You can get similar results with $objdump 
+
+Diving into the actual grit.  Dump the disassembled source:
+
+root@kali:~/re# objdump -D DNSvault
+
+This is where most of the work was performed.  I have annotated the dump with my notes in DNSvault.asm  
+
+Explanations annotations of key areas.  I have bolded the important addresses:
+
+<pre>
+<b>4008a0:	e8 4b fd ff ff       	callq  4005f0 <fgets@plt>         	  # request input from stdin</b>
+  4008a5:	c7 85 4c ff ff ff 00 	movl   $0x0,-0xb4(%rbp)           
+  4008ac:	00 00 00 
+  4008af:	eb 50                	jmp    400901 <main+0x204>        # jumping to a compare...
+  4008b1:	8b 85 4c ff ff ff    	mov    -0xb4(%rbp),%eax           # jump if less than equal 
+  4008b7:	48 98                	cltq                              # convert long to quad
+  4008b9:	0f b6 44 05 90       	movzbl -0x70(%rbp,%rax,1),%eax    # sign extends and copies to double word dest
+  4008be:	83 f0 42             	xor    $0x42,%eax                 # value 35 here in eax??
+  4008c1:	89 c2                	mov    %eax,%edx                  # copy 35 to edx
+  4008c3:	8b 85 4c ff ff ff    	mov    -0xb4(%rbp),%eax           # back to 0
+  4008c9:	48 98                	cltq   
+  4008cb:	88 54 05 b0          	mov    %dl,-0x50(%rbp,%rax,1)     # dl is 35, 
+  4008cf:	8b 85 4c ff ff ff    	mov    -0xb4(%rbp),%eax
+  4008d5:	48 98                	cltq   
+  4008d7:	0f b6 54 05 90       	movzbl -0x70(%rbp,%rax,1),%edx
+  4008dc:	8b 85 4c ff ff ff    	mov    -0xb4(%rbp),%eax
+  4008e2:	48 98                	cltq   
+  4008e4:	0f b6 84 05 70 ff ff 	movzbl -0x90(%rbp,%rax,1),%eax
+  4008eb:	ff 
+  4008ec:	31 c2                	xor    %eax,%edx
+  4008ee:	8b 85 4c ff ff ff    	mov    -0xb4(%rbp),%eax
+  4008f4:	48 98                	cltq                                # convert long to quad (8 bytes)
+  4008f6:	88 54 05 d0          	mov    %dl,-0x30(%rbp,%rax,1)
+  4008fa:	83 85 4c ff ff ff 01 	addl   $0x1,-0xb4(%rbp)
+  400901:	83 bd 4c ff ff ff 13 	cmpl   $0x13,-0xb4(%rbp)
+  400908:	7e a7                	jle    4008b1 <main+0x1b4>          # jump back
+  40090a:	c6 45 c3 00          	movb   $0x0,-0x3d(%rbp)
+  40090e:	48 8d 8d 50 ff ff ff 	lea    -0xb0(%rbp),%rcx
+  400915:	48 8d 45 b0          	lea    -0x50(%rbp),%rax
+  400919:	ba 14 00 00 00       	mov    $0x14,%edx
+  40091e:	48 89 ce             	mov    %rcx,%rsi
+  400921:	48 89 c7             	mov    %rax,%rdi                      # after entering password: 
+  
+  <b>
+  #Check if the password is correct.  If it not, jump to printing the error message.
+  400924:	e8 b7 fc ff ff       	callq  4005e0 <memcmp@plt>
+  400929:	85 c0                	test   %eax,%eax                      
+  40092b:	75 4f                	jne    40097c <main+0x27f>            
+                                                                      </b>
+                                                                 
+  <b> # This is the address we want to jump to.  This begins the printing of the flag                                                               
+  40092d:	bf 4b 0c 40 00       	mov    $0x400c4b,%edi    </b>            
+  400932:	e8 69 fc ff ff       	callq  4005a0 <puts@plt>
+  400937:	bf 58 0c 40 00       	mov    $0x400c58,%edi
+  40093c:	e8 5f fc ff ff       	callq  4005a0 <puts@plt>
+  400941:	bf 88 0c 40 00       	mov    $0x400c88,%edi
+  400946:	e8 55 fc ff ff       	callq  4005a0 <puts@plt>
+  40094b:	bf 58 0c 40 00       	mov    $0x400c58,%edi
+  400950:	e8 4b fc ff ff       	callq  4005a0 <puts@plt>
+  400955:	48 8d 45 d0          	lea    -0x30(%rbp),%rax               # load effective address
+  400959:	48 89 c6             	mov    %rax,%rsi
+  40095c:	bf b1 0c 40 00       	mov    $0x400cb1,%edi                 # Calls the please enter your password address
+  400961:	b8 00 00 00 00       	mov    $0x0,%eax
+  400966:	e8 55 fc ff ff       	callq  4005c0 <printf@plt>            # Prints the flag
+  40096b:	bf 58 0c 40 00       	mov    $0x400c58,%edi                 # Prints the entry +------+
+  400970:	e8 2b fc ff ff       	callq  4005a0 <puts@plt>
+  400975:	b8 00 00 00 00       	mov    $0x0,%eax
+  40097a:	eb 0f                	jmp    40098b <main+0x28e>
+  40097c:	bf ca 0c 40 00       	mov    $0x400cca,%edi                 # jump to here from not equal compare
+  400981:	e8 1a fc ff ff       	callq  4005a0 <puts@plt>              # print incorrect password 
+  400986:	b8 01 00 00 00       	mov    $0x1,%eax
+</pre>
+
+
+
+Set a breakpoint before the jump not equal (jne) @ 0x40092b so that the error message is not printed.
+
+<pre>
+(gdb) break *0x40092b
+Breakpoint 1 at 0x40092b
+(gdb) run
+Starting program: /root/re/DNSvault
+ _____                                    _  __      __         _ _
+|  __ \                                  | | \ \    / /        | | |
+| |__) |_ _ ___ _____      _____  _ __ __| |  \ \  / /_ _ _   _| | |_
+|  ___/ _` / __/ __\ \ /\ / / _ \| '__/ _` |   \ \/ / _` | | | | | __|
+| |  | (_| \__ \__ \\ V  V / (_) | | | (_| |    \  / (_| | |_| | | |_
+|_|   \__,_|___/___/ \_/\_/ \___/|_|  \__,_|     \/ \__,_|\__,_|_|\__|
+A project of the Department of National Security
+Authorized use only!
+
+
+Please enter your password: abc
+
+Breakpoint 1, 0x000000000040092b in main ()
+</pre>
+
+We can see the program counter is set to our breakpoint:
+
+<pre>
+(gdb) i r $pc
+pc             0x40092b 0x40092b <main+558>
+</pre>
+
+Instead of following the jump logic we can set the program counter to the next instruction after jne:
+
+<pre>
+(gdb) set $pc=0x40092d
+(gdb) c
+Continuing.
+
+(gdb) y:
++----------------+---------------------+
+| Username       | Password            |
++----------------+---------------------+
+| the flag       | kseR+#2 |
++----------------+---------------------+
+</pre>
+
+
 ### Level 3 Never Roll Your Own Crypto
 
 My first incorrect approach was to build a sort of rainbow table.  Keep a hash table with the key as ascii characters, and values as a massive list of ciphers. Keep making requests until you start to receive duplicates.  In theory, this would work.
