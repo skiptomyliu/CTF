@@ -618,12 +618,16 @@ Assembly is simpler than C. In GAS assembly, instructions are suffixed with the 
   400915:	48 8d 45 b0          	lea    -0x50(%rbp),%rax
   400919:	ba 14 00 00 00       	mov    $0x14,%edx
   40091e:	48 89 ce             	mov    %rcx,%rsi
-  400921:	48 89 c7             	mov    %rax,%rdi                      # after entering password: 
-  400924:	e8 b7 fc ff ff       	callq  4005e0 <memcmp@plt>            # Call compare
-  400929:	85 c0                	test   %eax,%eax                      # jump if not equal to 0?
-                                                                      # test sets 0 flag if result of bitwise AND is 0
-  40092b:	75 4f                	jne    40097c <main+0x27f>            # jump not equal result of test. test must equal 1
-                                                                      # jumps to a print
+  400921:	48 89 c7             	mov    %rax,%rdi                  
+
+  # after entering password.  Call compare.  If zflag not equal to 0, jump to printing the incorrect password message
+
+  400924:	e8 b7 fc ff ff       	callq  4005e0 <memcmp@plt>        # Call compare
+  400929:	85 c0                	test   %eax,%eax                  # test sets 0 flag if result of bitwise AND is 0
+  40092b:	75 4f                	jne    40097c <main+0x27f>        
+
+  # Begin display of flag:
+
   40092d:	bf 4b 0c 40 00       	mov    $0x400c4b,%edi
   400932:	e8 69 fc ff ff       	callq  4005a0 <puts@plt>
   400937:	bf 58 0c 40 00       	mov    $0x400c58,%edi
