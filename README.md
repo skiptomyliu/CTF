@@ -73,11 +73,13 @@ Tools used:  readelf, strings, objdump, gdb
 
 Obtaining file type:
 
+<pre>
 kali:~/re# file DNSvault
 DNSvault: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.24, BuildID[sha1]=4fa2a0be6e3d44846833aa7723ca38e31a6b0baa, not stripped
-
+</pre>
 
 Obtaining clues from strings.  I have truncated the output to items that were interesting:
+<pre>
 kali:~/re# strings DNSvault
 /lib64/ld-linux-x86-64.so.2
 
@@ -109,12 +111,13 @@ putchar@@GLIBC_2.2.5
 puts@@GLIBC_2.2.5
 stdin@@GLIBC_2.2.5
 printf@@GLIBC_2.2.5
-
-You can get similar results with $objdump 
+</pre>
 
 Diving into the actual grit.  Dump the disassembled source:
 
+<pre>
 root@kali:~/re# objdump -D DNSvault
+</pre>
 
 This is where most of the work was performed.  I have annotated the dump with my notes in DNSvault.asm  
 
