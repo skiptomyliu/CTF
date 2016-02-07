@@ -514,7 +514,7 @@ Assembly is simpler than C. In GAS assembly, instructions are suffixed with the 
   4006fd:	55                   	push   %rbp             # save calling function's stack frame (rbp)
   4006fe:	48 89 e5             	mov    %rsp,%rbp        # make new stack frame on top of caller's stack frame 
   400701:	53                   	push   %rbx             
-  400702:	48 81 ec b8 00 00 00 	sub    $0xb8,%rsp
+  400702:	48 81 ec b8 00 00 00 	sub    $0xb8,%rsp	# allocate 184 bytes on the stack space
   400709:	64 48 8b 04 25 28 00 	mov    %fs:0x28,%rax
   400710:	00 00 
   400712:	48 89 45 e8          	mov    %rax,-0x18(%rbp) 
@@ -614,9 +614,9 @@ Assembly is simpler than C. In GAS assembly, instructions are suffixed with the 
   400901:	83 bd 4c ff ff ff 13 	cmpl   $0x13,-0xb4(%rbp)
   400908:	7e a7                	jle    4008b1 <main+0x1b4>        # jump back for more string stuff.  Seems like for loop
   40090a:	c6 45 c3 00          	movb   $0x0,-0x3d(%rbp)
-  40090e:	48 8d 8d 50 ff ff ff 	lea    -0xb0(%rbp),%rcx
-  400915:	48 8d 45 b0          	lea    -0x50(%rbp),%rax
-  400919:	ba 14 00 00 00       	mov    $0x14,%edx
+  40090e:	48 8d 8d 50 ff ff ff 	lea    -0xb0(%rbp),%rcx		  # memory address of password
+  400915:	48 8d 45 b0          	lea    -0x50(%rbp),%rax		  # memory address of our string
+  400919:	ba 14 00 00 00       	mov    $0x14,%edx		  # memcmp arg3 = 20 (20 chars to compare)
   40091e:	48 89 ce             	mov    %rcx,%rsi
   400921:	48 89 c7             	mov    %rax,%rdi                  
 
