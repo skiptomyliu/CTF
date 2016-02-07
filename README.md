@@ -280,10 +280,12 @@ We can see the corresponding decompiled assembly code prior to calling memcmp:
   ; address of password
   400921:       48 89 c7                mov    rdi,rax             
   ; address of our input password
-<pre>
+</pre>
+
 Analyzing the data stored at memory locations $rsi and $rdi using x/s (for string printing) we get some jumbled output.  
 
 Let's figure out how our data is stored:
+
 <pre>
 Please enter your password: ccccccc
 
@@ -293,11 +295,13 @@ Breakpoint 1, 0x0000000000400924 in main ()
 0x7fffffffe548: 0x42  0xa4  0xbd  0xbd  0xbd  0x3d  0x42  0x42
 0x7fffffffe550: 0x43  0x42  0x42  0x00  0x00
 </pre>
+
 We can see that our 'c' is being translated to 0x21 (repeated 7 times).  Also notice that 0x00 stops at length 20, which corresponds to the size of memory memcmp will be using
 
 We can now map our input by entering characters at will 'abcdefg' ... 
 
 The password of DNSVault can be seen at the memory location of $rsi:
+
 <pre>
 (gdb) x/20 $rsi
 0x7fffffffe4e0: 0x11  0x36  0x37  0x3a  0x2c  0x27  0x36  0x62
@@ -328,7 +332,7 @@ Please enter your password: Stuxnet the Planet!
 +----------------+---------------------+
 </pre>
 
-Here is the relevant block of assembly code.  DNSVault takes in your password, loops through each character and XORs the character with 0x42.  The result is then compared to the already XORed password.
+Here is the relevant block of assembly code to figure out how the translation of our string is happening.  DNSVault takes in your password, loops through each character and XORs the character with 0x42.  The result is then compared to the already XORed password.
 
 <pre>
 4008a0:       e8 4b fd ff ff          call   4005f0 <fgets@plt>               ; get stdin
