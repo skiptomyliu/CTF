@@ -264,7 +264,7 @@ Continuing.
 
 Additional notes:
 
-I have not been able to figure out the password to the code, but I suspect that code from addresses 0x4008b1 to 0x400908 is where the comparison takes place.  If we use gdb to dump the memory register $rbp-0xb4, within the memory blocks we can see the password we have inputed for comparison.  Values in 0x400718 to 0x40081c seem to also allude to a potential password character set (67:,'6b6*'b .#,'6c X+#2 EY? N'2), although could be completely off base.
+~~I have not been able to figure out the password to the code, but I suspect that code from addresses 0x4008b1 to 0x400908 is where the comparison takes place.  If we use gdb to dump the memory register $rbp-0xb4, within the memory blocks we can see the password we have inputed for comparison.  Values in 0x400718 to 0x40081c seem to also allude to a potential password character set (67:,'6b6*'b .#,'6c X+#2 EY? N'2), although could be completely off base.~~
 
 
 
