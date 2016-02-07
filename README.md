@@ -268,7 +268,7 @@ I have not been able to figure out the password to the code, but I suspect that 
 
 
 
-Revisiting on 2/7.  It turns out my original posted solution is the incorrect flag.  Obtaining the right flag, let's analyze right before the memcmp is called.  For reference memcmp, takes three arguments
+Revisiting on 2/7.  It turns out my original posted solution is the incorrect flag.  Now that I've actually got the correct flag, let's analyze right before the memcmp is called.  For reference memcmp, takes three arguments
 <pre>
 int memcmp(const void *s1, const void *s2, size_t n);
 </pre>
@@ -298,7 +298,7 @@ Breakpoint 1, 0x0000000000400924 in main ()
 
 We can see that our 'c' is being translated to 0x21 (repeated 7 times).  Also notice that 0x00 stops at length 20, which corresponds to the size of memory memcmp will be using
 
-We can now map our input by entering characters at will 'abcdefg' ... 
+One solution is to now map our input by entering the alphabet 'abcdefg' ... and then recording the translated output to create our lookup table.  
 
 The password of DNSVault can be seen at the memory location of $rsi:
 
@@ -342,7 +342,7 @@ Here is the relevant block of assembly code to figure out how the translation of
 4008b1:       8b 85 4c ff ff ff       mov    eax,DWORD PTR [rbp-0xb4]         ; set to counter
 4008b7:       48 98                   cdqe
 4008b9:       0f b6 44 05 90          movzx  eax,BYTE PTR [rbp+rax*1-0x70]    ; $eax contains the decimal representation of our char
-4008be:       83 f0 42                xor    eax,0x42                         ; this is the key part right here:  xor the value, which will yields value A -> 3
+<b>4008be:       83 f0 42                xor    eax,0x42                         ; this is the key part right here:  xor the value, which will yields value A -> 3</b>
 4008c1:       89 c2                   mov    edx,eax                          ; save XORed value into edx
 4008c3:       8b 85 4c ff ff ff       mov    eax,DWORD PTR [rbp-0xb4]         ; set eax to counter
 4008c9:       48 98                   cdqe
@@ -352,15 +352,15 @@ Here is the relevant block of assembly code to figure out how the translation of
 4008d7:       0f b6 54 05 90          movzx  edx,BYTE PTR [rbp+rax*1-0x70]    ; set edx to character decimal value
 4008dc:       8b 85 4c ff ff ff       mov    eax,DWORD PTR [rbp-0xb4]         ; set eax to counter
 4008e2:       48 98                   cdqe
-4008e4:       0f b6 84 05 70 ff ff    movzx  eax,BYTE PTR [rbp+rax*1-0x90]    ;
+4008e4:       0f b6 84 05 70 ff ff    movzx  eax,BYTE PTR [rbp+rax*1-0x90]    ; wtf is this
 4008eb:       ff
-4008ec:       31 c2                   xor    edx,eax
-4008ee:       8b 85 4c ff ff ff       mov    eax,DWORD PTR [rbp-0xb4]
+4008ec:       31 c2                   xor    edx,eax                          ; xor by 10? 17, 6
+4008ee:       8b 85 4c ff ff ff       mov    eax,DWORD PTR [rbp-0xb4]         ; reset to counter
 4008f4:       48 98                   cdqe
 4008f6:       88 54 05 d0             mov    BYTE PTR [rbp+rax*1-0x30],dl     ; get the next character in line
 4008fa:       83 85 4c ff ff ff 01    add    DWORD PTR [rbp-0xb4],0x1         ; counter++
 400901:       83 bd 4c ff ff ff 13    cmp    DWORD PTR [rbp-0xb4],0x13        ; if less than 19 (length of string to compare)
-400908:       7e a7                   jle    4008b1 <main+0x1b4>
+400908:       7e a7                   jle    4008b1 <main+0x1b4>              ; jump back to start of loop if less than 19
 40090a:       c6 45 c3 00             mov    BYTE PTR [rbp-0x3d],0x0
 40090e:       48 8d 8d 50 ff ff ff    lea    rcx,[rbp-0xb0]
 400915:       48 8d 45 b0             lea    rax,[rbp-0x50]
@@ -369,6 +369,8 @@ Here is the relevant block of assembly code to figure out how the translation of
 400921:       48 89 c7                mov    rdi,rax             ; address of our input password
 400924:       e8 b7 fc ff ff          call   4005e0 <memcmp@plt>
 </pre>
+
+
 
 
 
