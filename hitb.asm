@@ -72,15 +72,15 @@ Disassembly of section .text:
 00000000004006c0 <main>:
   4006c0:	41 57                	push   r15
   4006c2:	be 7e 0a 40 00       	mov    esi,0x400a7e
-  4006c7:	b9 25 00 00 00       	mov    ecx,0x25
+  4006c7:	b9 25 00 00 00       	mov    ecx,0x25			       ; set ecx to 37
   4006cc:	41 56                	push   r14
   4006ce:	41 55                	push   r13
   4006d0:	41 54                	push   r12
   4006d2:	55                   	push   rbp
   4006d3:	53                   	push   rbx
-  4006d4:	48 81 ec 68 01 00 00 	sub    rsp,0x168			
-  4006db:	48 8d 7c 24 34       	lea    rdi,[rsp+0x34]
-  4006e0:	48 8d 54 24 10       	lea    rdx,[rsp+0x10]
+  4006d4:	48 81 ec 68 01 00 00 	sub    rsp,0x168		       ; rsp starts at some super high #, subtract 360
+  4006db:	48 8d 7c 24 34       	lea    rdi,[rsp+0x34]		       ; load value of $rsp + 52
+  4006e0:	48 8d 54 24 10       	lea    rdx,[rsp+0x10]		       ; load value of rsp + 16
   4006e5:	f3 a4                	rep movs BYTE PTR es:[rdi],BYTE PTR ds:[rsi]
   4006e7:	64 48 8b 04 25 28 00 	mov    rax,QWORD PTR fs:0x28
   4006ee:	00 00 
@@ -128,20 +128,20 @@ Disassembly of section .text:
   400787:	31 c0                	xor    eax,eax				; clear 0
   400789:	4c 89 ef             	mov    rdi,r13				;
   40078c:	f2 ae                	repnz scas al,BYTE PTR es:[rdi]
-  40078e:	44 89 e6             	mov    esi,r12d
+  40078e:	44 89 e6             	mov    esi,r12d				
   400791:	4d 63 fc             	movsxd r15,r12d
   400794:	48 f7 d1             	not    rcx
   400797:	48 ff c9             	dec    rcx
-  40079a:	49 39 cc             	cmp    r12,rcx
+  40079a:	49 39 cc             	cmp    r12,rcx				; 
   40079d:	72 a9                	jb     400748 <main+0x88>		; end counter
   40079f:	48 8d 54 24 59       	lea    rdx,[rsp+0x59]
-  4007a4:	be 44 0a 40 00       	mov    esi,0x400a44
+  4007a4:	be 44 0a 40 00       	mov    esi,0x400a44			; special char 
   4007a9:	bf 01 00 00 00       	mov    edi,0x1
-  4007ae:	42 c6 44 3c 59 00    	mov    BYTE PTR [rsp+r15*1+0x59],0x0
-  4007b4:	48 ff c3             	inc    rbx
+  4007ae:	42 c6 44 3c 59 00    	mov    BYTE PTR [rsp+r15*1+0x59],0x0	; 
+  4007b4:	48 ff c3             	inc    rbx				; counter for looping through all strings
   4007b7:	e8 c4 fe ff ff       	call   400680 <__printf_chk@plt>
   4007bc:	31 c0                	xor    eax,eax
-  4007be:	bf 01 00 00 00       	mov    edi,0x1
+  4007be:	bf 01 00 00 00       	mov    edi,0x1				; arg for sleep
   4007c3:	e8 c8 fe ff ff       	call   400690 <sleep@plt> 		; sleep for 1 second
   4007c8:	48 83 fb 24          	cmp    rbx,0x24				; compare $rbx (counter? increases on each loop) with 36
   4007cc:	0f 85 47 ff ff ff    	jne    400719 <main+0x59>		; jump if not equal to 36... is this how many text there are (37 total, 0 index)
@@ -153,7 +153,7 @@ Disassembly of section .text:
   4007e3:	e9 31 ff ff ff       	jmp    400719 <main+0x59>		; 
   4007e8:	48 8d 5c 24 10       	lea    rbx,[rsp+0x10]			; load value 83 into rbx   -----
   4007ed:	48 8d 6c 24 34       	lea    rbp,[rsp+0x34]			; load value 105 into rbp
-  4007f2:	be 53 0a 40 00       	mov    esi,0x400a53			;  
+  4007f2:	be 53 0a 40 00       	mov    esi,0x400a53			; print "KEY"
   4007f7:	bf 01 00 00 00       	mov    edi,0x1				;
   4007fc:	31 c0                	xor    eax,eax
   4007fe:	e8 7d fe ff ff       	call   400680 <__printf_chk@plt>
@@ -162,23 +162,23 @@ Disassembly of section .text:
   400808:	be 59 0a 40 00       	mov    esi,0x400a59
   40080d:	bf 01 00 00 00       	mov    edi,0x1
   400812:	48 ff c3             	inc    rbx				; keep incrementing rbx until equal to rbp
-  400815:	e8 66 fe ff ff       	call   400680 <__printf_chk@plt>
+  400815:	e8 66 fe ff ff       	call   400680 <__printf_chk@plt>	; print the key?
   40081a:	48 39 eb             	cmp    rbx,rbp
   40081d:	75 e4                	jne    400803 <main+0x143>
-  40081f:	bf 0a 00 00 00       	mov    edi,0xa
-  400824:	31 db                	xor    ebx,ebx
-  400826:	e8 05 fe ff ff       	call   400630 <putchar@plt>
-  40082b:	be 5f 0a 40 00       	mov    esi,0x400a5f
-  400830:	bf 01 00 00 00       	mov    edi,0x1
+  40081f:	bf 0a 00 00 00       	mov    edi,0xa				; print new line
+  400824:	31 db                	xor    ebx,ebx				
+  400826:	e8 05 fe ff ff       	call   400630 <putchar@plt>		; print the new line
+  40082b:	be 5f 0a 40 00       	mov    esi,0x400a5f			; address of "OK YOU WIN..."
+  400830:	bf 01 00 00 00       	mov    edi,0x1				
   400835:	31 c0                	xor    eax,eax
-  400837:	e8 44 fe ff ff       	call   400680 <__printf_chk@plt>
+  400837:	e8 44 fe ff ff       	call   400680 <__printf_chk@plt>	; print the "OK YOU WIN..."
   40083c:	40 8a 7c 1c 10       	mov    dil,BYTE PTR [rsp+rbx*1+0x10]
   400841:	40 32 7c 1c 34       	xor    dil,BYTE PTR [rsp+rbx*1+0x34]	; this is the key part right here... the xor 
   400846:	48 ff c3             	inc    rbx				; counter
-  400849:	40 0f b6 ff          	movzx  edi,dil
+  400849:	40 0f b6 ff          	movzx  edi,dil				; edi is arg into putchar
   40084d:	e8 de fd ff ff       	call   400630 <putchar@plt>
   400852:	48 83 fb 24          	cmp    rbx,0x24				; if less than 36, jump
-  400856:	75 e4                	jne    40083c <main+0x17c>			
+  400856:	75 e4                	jne    40083c <main+0x17c>		; 
   400858:	bf 0a 00 00 00       	mov    edi,0xa
   40085d:	e8 ce fd ff ff       	call   400630 <putchar@plt>
   400862:	31 c0                	xor    eax,eax
