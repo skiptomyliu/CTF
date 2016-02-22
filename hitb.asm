@@ -78,36 +78,49 @@ Disassembly of section .text:
   4006d0:	41 54                	push   r12
   4006d2:	55                   	push   rbp
   4006d3:	53                   	push   rbx
-  4006d4:	48 81 ec 68 01 00 00 	sub    rsp,0x168		       ; rsp starts at some super high #, subtract 360
-  4006db:	48 8d 7c 24 34       	lea    rdi,[rsp+0x34]		       ; load value of $rsp + 52
-  4006e0:	48 8d 54 24 10       	lea    rdx,[rsp+0x10]		       ; load value of rsp + 16
-  4006e5:	f3 a4                	rep movs BYTE PTR es:[rdi],BYTE PTR ds:[rsi]
+  4006d4:	48 81 ec 68 01 00 00 	sub    rsp,0x168		       ; rsp starts at some super high #, subtract 360, stack setup?
+  4006db:	48 8d 7c 24 34       	lea    rdi,[rsp+0x34]		       ; load value of $rsp + 52 -- this is the key
+  4006e0:	48 8d 54 24 10       	lea    rdx,[rsp+0x10]		       ; load value of rsp + 16 -- this is the string
+  4006e5:	f3 a4                	rep movs BYTE PTR es:[rdi],BYTE PTR ds:[rsi] ; copy memory ds:[rsi] to es:[rdi]  
   4006e7:	64 48 8b 04 25 28 00 	mov    rax,QWORD PTR fs:0x28
   4006ee:	00 00 
   4006f0:	48 89 84 24 58 01 00 	mov    QWORD PTR [rsp+0x158],rax
   4006f7:	00 
-  4006f8:	31 c0                	xor    eax,eax
+  4006f8:	31 c0                	xor    eax,eax				; set to 0
   4006fa:	48 89 d7             	mov    rdi,rdx
   4006fd:	b1 09                	mov    cl,0x9
-  4006ff:	f3 ab                	rep stos DWORD PTR es:[rdi],eax
+  4006ff:	f3 ab                	rep stos DWORD PTR es:[rdi],eax		; init to 0?
   400701:	31 ff                	xor    edi,edi
-  400703:	e8 68 ff ff ff       	call   400670 <time@plt>
-  400708:	c7 44 24 08 37 13 03 	mov    DWORD PTR [rsp+0x8],0x31337
+  400703:	e8 68 ff ff ff       	call   400670 <time@plt>		; unix epoch, set $eax to this
+  400708:	c7 44 24 08 37 13 03 	mov    DWORD PTR [rsp+0x8],0x31337	; counter for looping through all the strings (201527)
   40070f:	00 
-  400710:	89 44 24 0c          	mov    DWORD PTR [rsp+0xc],eax
-  400714:	e9 bf 00 00 00       	jmp    4007d8 <main+0x118>
-  400719:	31 ff                	xor    edi,edi				; jump from 4007cc
+  400710:	89 44 24 0c          	mov    DWORD PTR [rsp+0xc],eax		; set unix time to rsp+0xc
+  400714:	e9 bf 00 00 00       	jmp    4007d8 <main+0x118>		; subtract defaced here 1 time at start of program by epoch time
+
+
+  ; beginning of all loop strings:
+
+  ; use base 0xdefaced-epoch.  then add epoch time each time * rbx
+  ; call rand with ^ and xor this to r13d. set key to the r13b (lower 8 bits of r13).  
+  400719:	31 ff                	xor    edi,edi				; beginning of printing all srings loop
   40071b:	45 31 e4             	xor    r12d,r12d			; clear r12d (lower 32 bits of 64 bit reg r12) to 0
-  40071e:	e8 4d ff ff ff       	call   400670 <time@plt>
-  400723:	8d 7c 05 00          	lea    edi,[rbp+rax*1+0x0]		;
+  40071e:	e8 4d ff ff ff       	call   400670 <time@plt>		; sets rax to time epoch
+  400723:	8d 7c 05 00          	lea    edi,[rbp+rax*1+0x0]		; arg for srand, rbp set to 0xdefaced-epoch_time, rax is unix epoch
+										; keep adding to this base address for each loop. then reset rbp to 0xdefaced-epoch
   400727:	e8 34 ff ff ff       	call   400660 <srand@plt>
-  40072c:	44 8a 6c 1c 10       	mov    r13b,BYTE PTR [rsp+rbx*1+0x10]
+  40072c:	44 8a 6c 1c 10       	mov    r13b,BYTE PTR [rsp+rbx*1+0x10]	; load contents at address into r13b
   400731:	e8 6a ff ff ff       	call   4006a0 <rand@plt>
-  400736:	41 31 c5             	xor    r13d,eax
-  400739:	44 88 6c 1c 10       	mov    BYTE PTR [rsp+rbx*1+0x10],r13b
-  40073e:	4c 8b 2c dd 80 20 60 	mov    r13,QWORD PTR [rbx*8+0x602080]
+  400736:	41 31 c5             	xor    r13d,eax			      ; 
+  400739:	44 88 6c 1c 10       	mov    BYTE PTR [rsp+rbx*1+0x10],r13b ;   load contents of r13b into rsp+rbx*1+0x10.... this the key part?
+
+  40073e:	4c 8b 2c dd 80 20 60 	mov    r13,QWORD PTR [rbx*8+0x602080] ;   load contents at address into r13
+									      ;   r13 = current string, all lower case
   400745:	00 
-  400746:	eb 3b                	jmp    400783 <main+0xc3>	     ; begin random camel case of strings
+  400746:	eb 3b                	jmp    400783 <main+0xc3>	     ; begin random camel case of strings; first char always skipped?
+  
+
+
+  ; begin toupper/lower string
   400748:	4f 0f be 74 25 00    	movsx  r14,BYTE PTR [r13+r12*1+0x0]  ; store 8 bit value at mem (our string) in r14; jump from 40079d
   40074e:	41 80 fe 69          	cmp    r14b,0x69		     ; compare with 105
   400752:	75 08                	jne    40075c <main+0x9c>
@@ -129,13 +142,16 @@ Disassembly of section .text:
   400789:	4c 89 ef             	mov    rdi,r13				;
   40078c:	f2 ae                	repnz scas al,BYTE PTR es:[rdi]
   40078e:	44 89 e6             	mov    esi,r12d				
-  400791:	4d 63 fc             	movsxd r15,r12d
+  400791:	4d 63 fc             	movsxd r15,r12d				;
   400794:	48 f7 d1             	not    rcx
   400797:	48 ff c9             	dec    rcx
   40079a:	49 39 cc             	cmp    r12,rcx				; 
-  40079d:	72 a9                	jb     400748 <main+0x88>		; end counter
+  40079d:	72 a9                	jb     400748 <main+0x88>		; end counter to what I believe is doing tolower/toupper... if r12<rcx than jump 400748
+  ; end toupper/lower string
+
+
   40079f:	48 8d 54 24 59       	lea    rdx,[rsp+0x59]
-  4007a4:	be 44 0a 40 00       	mov    esi,0x400a44			; special char 
+  4007a4:	be 44 0a 40 00       	mov    esi,0x400a44			; special char, the musical note
   4007a9:	bf 01 00 00 00       	mov    edi,0x1
   4007ae:	42 c6 44 3c 59 00    	mov    BYTE PTR [rsp+r15*1+0x59],0x0	; 
   4007b4:	48 ff c3             	inc    rbx				; counter for looping through all strings
@@ -145,26 +161,34 @@ Disassembly of section .text:
   4007c3:	e8 c8 fe ff ff       	call   400690 <sleep@plt> 		; sleep for 1 second
   4007c8:	48 83 fb 24          	cmp    rbx,0x24				; compare $rbx (counter? increases on each loop) with 36
   4007cc:	0f 85 47 ff ff ff    	jne    400719 <main+0x59>		; jump if not equal to 36... is this how many text there are (37 total, 0 index)
-  4007d2:	ff 4c 24 08          	dec    DWORD PTR [rsp+0x8]		; $rsp  loop through printing all 55 times?
+  4007d2:	ff 4c 24 08          	dec    DWORD PTR [rsp+0x8]		; $rsp  loop through printing all 36 lines, 201527 times, once done jump to print flag
   4007d6:	74 10                	je     4007e8 <main+0x128>		
   4007d8:	bd ed ac ef 0d       	mov    ebp,0xdefaced			; ?
-  4007dd:	31 db                	xor    ebx,ebx				; clear ebx
-  4007df:	2b 6c 24 0c          	sub    ebp,DWORD PTR [rsp+0xc]		; subtract from 0xdefaced
+  4007dd:	31 db                	xor    ebx,ebx				; clear ebx to begin string loop at index 0 again
+  4007df:	2b 6c 24 0c          	sub    ebp,DWORD PTR [rsp+0xc]		; subtract the unix epoch time from 0xdefaced, ebp = rbp
   4007e3:	e9 31 ff ff ff       	jmp    400719 <main+0x59>		; 
-  4007e8:	48 8d 5c 24 10       	lea    rbx,[rsp+0x10]			; load value 83 into rbx   -----
-  4007ed:	48 8d 6c 24 34       	lea    rbp,[rsp+0x34]			; load value 105 into rbp
+  
+
+  ; begin printing of flag, after rsp+0x8 reaches 0
+  4007e8:	48 8d 5c 24 10       	lea    rbx,[rsp+0x10]			; set rbx to mem of key or flag into rbx   -----
+  4007ed:	48 8d 6c 24 34       	lea    rbp,[rsp+0x34]			; load value 105 into rbp... key?
   4007f2:	be 53 0a 40 00       	mov    esi,0x400a53			; print "KEY"
   4007f7:	bf 01 00 00 00       	mov    edi,0x1				;
   4007fc:	31 c0                	xor    eax,eax
   4007fe:	e8 7d fe ff ff       	call   400680 <__printf_chk@plt>
+
+  ; print the key val  KEY: 86 ec b0 .. .. .. .. etc
   400803:	0f b6 13             	movzx  edx,BYTE PTR [rbx]		; load 116 into edx
   400806:	31 c0                	xor    eax,eax
-  400808:	be 59 0a 40 00       	mov    esi,0x400a59
+  400808:	be 59 0a 40 00       	mov    esi,0x400a59			; string argument 
   40080d:	bf 01 00 00 00       	mov    edi,0x1
-  400812:	48 ff c3             	inc    rbx				; keep incrementing rbx until equal to rbp
-  400815:	e8 66 fe ff ff       	call   400680 <__printf_chk@plt>	; print the key?
+  400812:	48 ff c3             	inc    rbx				; keep incrementing rbx until memory of rbx = rbp.
+  400815:	e8 66 fe ff ff       	call   400680 <__printf_chk@plt>	; print the key
   40081a:	48 39 eb             	cmp    rbx,rbp
   40081d:	75 e4                	jne    400803 <main+0x143>
+
+
+  ; print ok you win string
   40081f:	bf 0a 00 00 00       	mov    edi,0xa				; print new line
   400824:	31 db                	xor    ebx,ebx				
   400826:	e8 05 fe ff ff       	call   400630 <putchar@plt>		; print the new line
@@ -172,7 +196,9 @@ Disassembly of section .text:
   400830:	bf 01 00 00 00       	mov    edi,0x1				
   400835:	31 c0                	xor    eax,eax
   400837:	e8 44 fe ff ff       	call   400680 <__printf_chk@plt>	; print the "OK YOU WIN..."
-  40083c:	40 8a 7c 1c 10       	mov    dil,BYTE PTR [rsp+rbx*1+0x10]
+
+  ; Begin printing of key by XOR  The key lives right next to pass 0x34 - 0x10 = 52 - 16 = 36
+  40083c:	40 8a 7c 1c 10       	mov    dil,BYTE PTR [rsp+rbx*1+0x10]	; rbx is the counter
   400841:	40 32 7c 1c 34       	xor    dil,BYTE PTR [rsp+rbx*1+0x34]	; this is the key part right here... the xor 
   400846:	48 ff c3             	inc    rbx				; counter
   400849:	40 0f b6 ff          	movzx  edi,dil				; edi is arg into putchar
