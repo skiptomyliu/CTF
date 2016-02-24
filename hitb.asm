@@ -72,15 +72,15 @@ Disassembly of section .text:
 00000000004006c0 <main>:
   4006c0:	41 57                	push   r15
   4006c2:	be 7e 0a 40 00       	mov    esi,0x400a7e
-  4006c7:	b9 25 00 00 00       	mov    ecx,0x25			       ; set ecx to 37
+  4006c7:	b9 25 00 00 00       	mov    ecx,0x25			       ; set ecx/rcx to 37
   4006cc:	41 56                	push   r14
   4006ce:	41 55                	push   r13
   4006d0:	41 54                	push   r12
   4006d2:	55                   	push   rbp
   4006d3:	53                   	push   rbx
   4006d4:	48 81 ec 68 01 00 00 	sub    rsp,0x168		       ; rsp starts at some super high #, subtract 360, stack setup?
-  4006db:	48 8d 7c 24 34       	lea    rdi,[rsp+0x34]		       ; load value of $rsp + 52 -- this is the key
-  4006e0:	48 8d 54 24 10       	lea    rdx,[rsp+0x10]		       ; load value of rsp + 16 -- this is the string
+  4006db:	48 8d 7c 24 34       	lea    rdi,[rsp+0x34]		       ; load value of $rsp + 52 -- this the string
+  4006e0:	48 8d 54 24 10       	lea    rdx,[rsp+0x10]		       ; load value of rsp + 16 -- this the key
   4006e5:	f3 a4                	rep movs BYTE PTR es:[rdi],BYTE PTR ds:[rsi] ; copy memory ds:[rsi] to es:[rdi]  
   4006e7:	64 48 8b 04 25 28 00 	mov    rax,QWORD PTR fs:0x28
   4006ee:	00 00 
@@ -108,10 +108,12 @@ Disassembly of section .text:
   400723:	8d 7c 05 00          	lea    edi,[rbp+rax*1+0x0]		; arg for srand, rbp set to 0xdefaced-epoch_time, rax is unix epoch
 										; keep adding to this base address for each loop. then reset rbp to 0xdefaced-epoch
   400727:	e8 34 ff ff ff       	call   400660 <srand@plt>
-  40072c:	44 8a 6c 1c 10       	mov    r13b,BYTE PTR [rsp+rbx*1+0x10]	; load contents at address into r13b
+  40072c:	44 8a 6c 1c 10       	mov    r13b,BYTE PTR [rsp+rbx*1+0x10]	; load character of key into r13b
   400731:	e8 6a ff ff ff       	call   4006a0 <rand@plt>
-  400736:	41 31 c5             	xor    r13d,eax			      ; 
-  400739:	44 88 6c 1c 10       	mov    BYTE PTR [rsp+rbx*1+0x10],r13b ;   load contents of r13b into rsp+rbx*1+0x10.... this the key part?
+  400736:	41 31 c5             	xor    r13d,eax			        ; 
+  400739:	44 88 6c 1c 10       	mov    BYTE PTR [rsp+rbx*1+0x10],r13b ;   load contents of r13b (lowest 8 bits) into rsp+rbx*1+0x10 after xor... this the key 
+  ; end key calculation
+
 
   40073e:	4c 8b 2c dd 80 20 60 	mov    r13,QWORD PTR [rbx*8+0x602080] ;   load contents at address into r13
 									      ;   r13 = current string, all lower case
